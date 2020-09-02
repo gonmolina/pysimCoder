@@ -19,10 +19,10 @@
 #include <pyblock.h>
 #include <wiringPi.h>
 #include <stdlib.h>
+#include <commonFun.h>
 
 #define RANGE  1024
 #define ZERO      512 
-#define VZERO    5.0
 
 static void init(python_block *block)
 {
@@ -31,20 +31,26 @@ static void init(python_block *block)
     exit (1) ;
 
   pinMode (intPar[0], PWM_OUTPUT) ;    /* set PWM port as output */
-  pwmSetMode(PWM_MODE_BAL); 
-  pwmSetClock(250);
+  pwmSetMode(PWM_MODE_MS); 
+  pwmSetClock(2);
   pwmSetRange (RANGE) ;
 
-  pwmWrite (intPar[0], 0) ;
+  pwmWrite (intPar[0], ZERO) ;
 }
 
 static void inout(python_block *block)
 {
   int * intPar    = block->intPar;
-  double *u = block->u[0];
+  double * realPar = block->realPar;
   
-  int val = (int) ((u[0]+VZERO)/VZERO*ZERO);
-  pwmWrite (intPar[0], val) ;
+  double *u = block->u[0];
+  double val = u[0];
+  if (val>realPar[1]) val = realPar[1];
+  if (val<realPar[0]) val = realPar[0];
+  
+  double value = (int) mapD2wD(val, realPar[0], realPar[1]);
+  
+  pwmWrite (intPar[0], (int) (value*RANGE)) ;
 }
 
 static void end(python_block *block)
@@ -55,13 +61,13 @@ static void end(python_block *block)
 
 void pwm(int flag, python_block *block)
 {
-  if (flag==OUT){          /* get input */
+  if (flag==CG_OUT){          /* get input */
     inout(block);
   }
-  else if (flag==END){     /* termination */ 
+  else if (flag==CG_END){     /* termination */ 
     end(block);
   }
-  else if (flag ==INIT){    /* initialisation */
+  else if (flag ==CG_INIT){    /* initialisation */
     init(block);
   }
 }

@@ -109,8 +109,6 @@ par_dict = dict(zip(pars, par_vals))
 f_A_lin = linear_state_matrix.subs(par_dict).subs(eq_dict)
 f_B_lin = linear_input_matrix.subs(par_dict).subs(eq_dict)
 
-from scipy import zeros
-import scipy as sp
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 from control import *
@@ -126,9 +124,6 @@ A[2] = A[2]/J1
 A[3] = A[3]/J2
 B1[2] = B1[2]/J1
 B1[3] = B1[3]/J2
-
-print(A)
-print(B1)
 
 A = A.astype('float64')
 B1 = B1.astype('float64')
@@ -147,33 +142,36 @@ gss = ss(A,B,C2,D2)
 gz = c2d(gss,ts,'zoh')
 
 # Control design
-wn = 10
+wn = 9
 
 xi1 = np.sqrt(2)/2 
-xi2 = np.sqrt(3)/2 
-#xi2 = 0.85
+xi2 = np.sqrt(3)/2
+xi2 = 0.85
+#xi1= 0.5
+#xi2= 0.55
 
 cl_p1 = [1,2*xi1*wn,wn**2]
 cl_p2 = [1,2*xi2*wn,wn**2]
 cl_p3 = [1,wn]
-cl_poly1 = sp.polymul(cl_p1,cl_p2)
-cl_poly = sp.polymul(cl_poly1,cl_p3)
-cl_poles = sp.roots(cl_poly)     # Desired continous poles
-cl_polesd = sp.exp(cl_poles*ts)  # Desired discrete poles
+cl_poly1 = np.polymul(cl_p1,cl_p2)
+cl_poly = np.polymul(cl_poly1,cl_p3)
+cl_poles = np.roots(cl_poly)     # Desired continous poles
+cl_polesd = np.exp(cl_poles*ts)  # Desired discrete poles
 
 # Add discrete integrator for steady state zero error
 Phi_f = np.vstack((gz.A,-gz.C*ts))
 Phi_f = np.hstack((Phi_f,[[0],[0],[0],[0],[1]]))
-G_f = np.vstack((gz.B,zeros((1,1))))
+G_f = np.vstack((gz.B,np.zeros((1,1))))
 
 # Pole placement
 k = place(Phi_f,G_f,cl_polesd)
 
 # Observer design - reduced order observer
-poli_of = 5*sp.roots(cl_poly1)     # Desired continous poles
-poli_o = 5*cl_poles[0:2]
-poli_oz = sp.exp(poli_o*ts) 
-poli_ozf = sp.exp(poli_of*ts)
+
+poli_of = 5*np.roots(cl_poly1)     # Desired continous poles
+poli_o = 5*np.roots(cl_p1)
+poli_oz = np.exp(poli_o*ts) 
+poli_ozf = np.exp(poli_of*ts)
 
 disks = ss(A,B,C,D)
 disksz = StateSpace(gz.A,gz.B,C,D,ts)
@@ -185,7 +183,7 @@ r_obs = red_obs(disksz ,T, poli_oz)
 f_obs = full_obs(disksz, poli_ozf)
 
 # Controller and observer in the same matrix -  Compact form
-contr_I = comp_form_i(disksz,r_obs,k,[0,1])
+contr_I = comp_form_i(disksz, r_obs,k,[0,1])
 
 # Implement anti windup
 [gss_in,gss_out] = set_aw(contr_I,[0.1, 0.1, 0.1])

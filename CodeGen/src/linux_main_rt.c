@@ -27,6 +27,7 @@ double NAME(MODEL,_get_tsamp)(void);
 
 static volatile int end = 0;
 static double T = 0.0;
+static double Tsamp;
 
 /* Options presettings */
 static char rtversion[] = "0.9";
@@ -38,6 +39,11 @@ double FinalTime = 0.0;
 double get_run_time()
 {
   return(T);
+}
+
+double get_Tsamp()
+{
+  return(Tsamp);
 }
 
 static inline void tsnorm(struct timespec *ts)
@@ -56,8 +62,7 @@ static inline double calcdiff(struct timespec t1, struct timespec t2)
   return (1e-6*diff);
 }
 
-
-void *rt_task(void *p)
+static void *rt_task(void *p)
 {
   struct timespec t_next, t_current, t_isr, T0;
   struct sched_param param;
@@ -70,7 +75,7 @@ void *rt_task(void *p)
 
   mlockall(MCL_CURRENT | MCL_FUTURE);
 
-  double Tsamp = NAME(MODEL,_get_tsamp)();
+  Tsamp = NAME(MODEL,_get_tsamp)();
 
   t_isr.tv_sec =  0L;
   t_isr.tv_nsec = (long)(1e9*Tsamp);
@@ -116,7 +121,8 @@ void *rt_task(void *p)
     clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &t_next, NULL);
     t_current = t_next;
   }
-  NAME(MODEL,_end)();  
+  NAME(MODEL,_end)();
+  pthread_exit(0);
 }
 
 void endme(int n)
@@ -175,8 +181,6 @@ static void proc_opt(int argc, char *argv[])
 int main(int argc,char** argv)
 {
   pthread_t thrd;
-  pthread_attr_t t_att;
-  int ap;
   int fd;
   int uid;
 
@@ -197,9 +201,9 @@ int main(int argc,char** argv)
 
   iopl(3);
 
-  ap=pthread_create(&thrd,NULL,rt_task,NULL);
+  pthread_create(&thrd,NULL,rt_task,NULL);
 
   pthread_join(thrd,NULL);
-  close(fd);
+  return(0);
 }
 

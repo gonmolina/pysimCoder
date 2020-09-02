@@ -1,8 +1,10 @@
 #import sys
 
-from pyqt5 import QDialog, QGridLayout, QLabel, QLineEdit, QPushButton, QListWidget, QtCore, QMessageBox
+from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QLineEdit, QPushButton, \
+    QListWidget, QMessageBox
+from PyQt5.QtCore import Qt
+
 from supsisim.const import pyrun, respath
-import subprocess
 
 class BlkDlg(QDialog):
     def __init__(self, line):
@@ -67,37 +69,9 @@ class BlkDlg(QDialog):
             self.line += '|' + self.labels[n] +': ' + str(self.Values[n].text())
         super(BlkDlg, self).accept()
 
-class ListDlg(QDialog):
-    def __init__(self, list, parent=None):
-        super(ListDlg, self).__init__(parent)
-        layout = QGridLayout()
-        self.setWindowModality(QtCore.QtCore.Qt.ApplicationModal)
-        self.resize(380, 180)
-        self.listWdg = QListWidget()
-        for item in list:
-            self.listWdg.addItem(item)
-        layout.addWidget(self.listWdg,0,0)
-        self.pbOK = QPushButton('OK')
-        self.pbCANCEL = QPushButton('CANCEL')
-        layout.addWidget(self.pbOK,0,1)
-        layout.addWidget(self.pbCANCEL,1,1)
-        self.pbOK.clicked.connect(self.accept)
-        self.pbCANCEL.clicked.connect(self.reject)
-        # Check dialog.listWdg.currentRow _> index started from 0
-        self.setLayout(layout)
-
 def parsDialog(pars):
     #app = app = QApplication(sys.argv)
     dialog = BlkDlg(pars)
     res = dialog.exec_()
     return dialog.line
-
-def plotDlg(nin, nout, pars, name):
-    fn = '/tmp/'+name
-    cmd = 'dataplot ' + fn
-    try:
-        subprocess.Popen(cmd, shell=True)
-    except:
-        pass
-    return pars
 

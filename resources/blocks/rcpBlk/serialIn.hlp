@@ -1,0 +1,4 @@
+Tid block reads values from the serial port and put them into the block diagram.
+
+Parameters: 
+Port:  ex. '/dev/ttyACM0'

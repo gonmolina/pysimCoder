@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #include <pyblock.h>
 #include <math.h>
 
+double get_Tsamp();
+
 static void init(python_block *block)
 {
   double * realPar = block->realPar;
@@ -28,7 +30,8 @@ static void init(python_block *block)
 
   double sign = 1.0;
   if(accZ[0]<0) sign=-1.0;
-  
+
+  realPar[1] = get_Tsamp();
   realPar[2] = atan2f(accX[0], sign*sqrt(accY[0]*accY[0]+accZ[0]*accZ[0]));
 }
 
@@ -60,16 +63,16 @@ static void end(python_block *block)
 
 void compFilt(int flag, python_block *block)
 {
-  if (flag==OUT){          /* get input */
+  if (flag==CG_OUT){          /* get input */
     inout(block);
   }
-  else if (flag == STUPD){
+  else if (flag == CG_STUPD){
     update(block);
   }
-  else if (flag==END){     /* termination */ 
+  else if (flag==CG_END){     /* termination */ 
     end(block);
   }
-  else if (flag ==INIT){    /* initialisation */
+  else if (flag ==CG_INIT){    /* initialisation */
     init(block);
   }
 }
